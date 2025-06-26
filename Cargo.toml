@@ -1,0 +1,23 @@
+[package]
+name = "axum_posts"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+tokio = { version = "1.45.1", features = ["full"] }
+axum = "0.8.4"
+axum-extra = { version = "0.10.1", features = ["cookie"] }
+dotenv = "0.15.0"
+argon2 = "0.5.3"
+async-trait = "0.1.88"
+chrono = { version = "0.4.41", features = ["serde"] }
+jsonwebtoken = "9.3.1"
+serde = { version = "1.0.219", features = ["derive"] }
+serde_json = "1.0.140"
+sqlx = { version = "0.8.6", features = ["runtime-async-std-native-tls", "postgres", "chrono", "uuid"] }
+uuid = { version = "1.17.0", features = ["serde", "v4"] }
+validator = { version = "0.20.0", features = ["derive"] }
+tower = "0.5.2"
+tower-http = { version = "0.6.6", features = ["cors", "trace"] }
+tracing-subscriber = "0.3.19"
+time = "0.3.41"
