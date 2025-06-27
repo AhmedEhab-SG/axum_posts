@@ -1,4 +1,26 @@
-use std::env::var;
+use std::{
+    env::var,
+    fmt::{Display, Formatter, Result},
+};
+
+#[derive(Debug, Clone, Copy)]
+pub enum Routes {
+    Base,
+    Auth,
+    Users,
+    Posts,
+}
+
+impl Display for Routes {
+    fn fmt(&self, f: &mut Formatter) -> Result {
+        match self {
+            Self::Base => write!(f, "/api"),
+            Self::Auth => write!(f, "/auth"),
+            Self::Users => write!(f, "/users"),
+            Self::Posts => write!(f, "/posts"),
+        }
+    }
+}
 
 #[derive(Debug, Clone)]
 pub struct Env {

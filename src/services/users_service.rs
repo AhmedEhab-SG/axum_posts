@@ -7,8 +7,8 @@ use serde_json::json;
 use uuid::Uuid;
 
 use crate::{
-    db::{DBClient, users::UserExt},
-    dtos::user_dto::{UserRequestDto, UserResponseDto, UserRole, UsersResponseDtoList},
+    db::{DBClient, users_db::UserExt},
+    dtos::user_dto::{UpdateUserDto, UserResponseDto, UserRole, UsersResponseDtoList},
     error::HttpError,
     utils::password::PasswordArgon,
 };
@@ -65,7 +65,7 @@ impl UsersService {
         Ok((StatusCode::OK, body).into_response())
     }
 
-    pub async fn update_user(&self, id: Uuid, data: UserRequestDto) -> Result<Response, HttpError> {
+    pub async fn update_user(&self, id: Uuid, data: UpdateUserDto) -> Result<Response, HttpError> {
         let password = match data.password {
             Some(password) => Some(
                 PasswordArgon::hash(&password)

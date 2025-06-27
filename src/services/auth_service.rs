@@ -10,7 +10,7 @@ use serde_json::json;
 
 use crate::{
     AppState,
-    db::{DBClient, users::UserExt},
+    db::{DBClient, users_db::UserExt},
     dtos::{
         auth_dto::{LoginDto, RegisterDto},
         user_dto::UserResponseDto,

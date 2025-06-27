@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use sqlx::{Error as SqlxError, query_as};
+use sqlx::{Error as SqlxError, query, query_as};
 use uuid::Uuid;
 
 use crate::{
@@ -20,18 +20,18 @@ pub trait UserExt {
 
     async fn get_user_count(&self) -> Result<i64, SqlxError>;
 
-    async fn create_user<T: Into<String> + Send>(
+    async fn create_user(
         &self,
-        name: T,
-        email: T,
-        password: T,
+        name: String,
+        email: String,
+        password: String,
     ) -> Result<User, SqlxError>;
 
     async fn update_user(
         &self,
         id: Uuid,
         email: Option<String>,
-        password_hash: Option<String>,
+        password: Option<String>,
     ) -> Result<Option<User>, SqlxError>;
 
     async fn update_user_role(&self, id: Uuid, role: UserRole) -> Result<User, SqlxError>;
@@ -97,11 +97,11 @@ impl UserExt for DBClient {
         .0)
     }
 
-    async fn create_user<T: Into<String> + Send>(
+    async fn create_user(
         &self,
-        name: T,
-        email: T,
-        password: T,
+        name: String,
+        email: String,
+        password: String,
     ) -> Result<User, SqlxError> {
         query_as::<_, User>(
             r#"
@@ -110,9 +110,9 @@ impl UserExt for DBClient {
             RETURNING *
             "#,
         )
-        .bind(name.into())
-        .bind(email.into())
-        .bind(password.into())
+        .bind(name)
+        .bind(email)
+        .bind(password)
         .fetch_one(&self.pool)
         .await
     }
@@ -129,6 +129,7 @@ impl UserExt for DBClient {
             SET
                 email = COALESCE($1, email),
                 password = COALESCE($2, password)
+                updated_at = NOW()
             WHERE id = $3
             RETURNING *
             "#,
@@ -156,17 +157,16 @@ impl UserExt for DBClient {
     }
 
     async fn delete_user(&self, id: Uuid) -> Result<bool, SqlxError> {
-        let result = query_as::<_, (bool,)>(
+        let result = query!(
             r#"
             DELETE FROM users
             WHERE id = $1
-            RETURNING TRUE
             "#,
+            id,
         )
-        .bind(id)
-        .fetch_optional(&self.pool)
+        .execute(&self.pool)
         .await?;
 
-        Ok(result.map_or(false, |(deleted,)| deleted))
+        Ok(result.rows_affected() > 0)
     }
 }

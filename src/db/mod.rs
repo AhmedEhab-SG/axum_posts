@@ -1,4 +1,5 @@
-pub mod users;
+pub mod posts_db;
+pub mod users_db;
 
 use std::error::Error;
 

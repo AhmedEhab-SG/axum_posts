@@ -68,7 +68,7 @@ impl UsersResponseDtoList {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
-pub struct UserRequestDto {
+pub struct UpdateUserDto {
     #[validate(length(min = 5, message = "name must be at least 5 characters long"))]
     pub name: Option<String>,
 

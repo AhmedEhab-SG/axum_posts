@@ -3,7 +3,7 @@ use axum::{
     extract::{Path, Query},
     middleware,
     response::Response,
-    routing::{delete, get, patch},
+    routing::{delete, get, patch, post},
 };
 use uuid::Uuid;
 use validator::Validate;
@@ -12,43 +12,37 @@ use crate::{
     AppState,
     dtos::{
         QueryRangeDto,
-        user_dto::{UpdateUserDto, UserRole},
+        post_dto::{CreatePostDto, UpdatePostDto},
+        user_dto::{User, UserRole},
     },
     error::HttpError,
-    middlewares::{
-        Middleware, auth_guard::AuthGuard, roles_guard::RolesGuard, self_guard::SelfGuard,
-    },
-    services::users_service::UsersService,
+    middlewares::{Middleware, auth_guard::AuthGuard, self_guard::SelfGuard},
+    services::posts_service::PostsService,
 };
 
 #[derive(Debug, Clone)]
-pub struct UsersHandler {
+pub struct PostsHandler {
     app_state: AppState,
 }
 
-impl UsersHandler {
+impl PostsHandler {
     pub fn new(app_state: AppState) -> Self {
         Self { app_state }
     }
 
-    pub fn router(&self, users_service: UsersService) -> Router {
+    pub fn router(&self, posts_service: PostsService) -> Router {
         Router::new()
-            .route("/{id}", get(Self::get_user))
+            .route("/{id}", get(Self::get_post))
+            .route("/", get(Self::get_posts))
             .route(
-                "/",
-                get(Self::get_users)
-                    .layer(middleware::from_fn(async |user, req, next| {
-                        RolesGuard::new(vec![UserRole::Admin])
-                            .validate_request(user, req, next)
-                            .await
-                    }))
-                    .layer(middleware::from_fn(async |state, req, next| {
-                        AuthGuard::new().validate_request(state, req, next).await
-                    })),
+                "/{id}",
+                post(Self::create_post).layer(middleware::from_fn(async |state, req, next| {
+                    AuthGuard::new().validate_request(state, req, next).await
+                })),
             )
             .route(
                 "/{id}",
-                patch(Self::update_user)
+                patch(Self::update_post)
                     .layer(middleware::from_fn(async |user, req, next| {
                         SelfGuard::new(vec![UserRole::Admin])
                             .validate_request(user, req, next)
@@ -59,20 +53,8 @@ impl UsersHandler {
                     })),
             )
             .route(
-                "/role/{id}",
-                patch(Self::update_user_role)
-                    .layer(middleware::from_fn(async |user, req, next| {
-                        RolesGuard::new(vec![UserRole::Admin])
-                            .validate_request(user, req, next)
-                            .await
-                    }))
-                    .layer(middleware::from_fn(async |state, req, next| {
-                        AuthGuard::new().validate_request(state, req, next).await
-                    })),
-            )
-            .route(
                 "/{id}",
-                delete(Self::delete_user)
+                delete(Self::delete_post)
                     .layer(middleware::from_fn(async |user, req, next| {
                         SelfGuard::new(vec![UserRole::Admin])
                             .validate_request(user, req, next)
@@ -83,21 +65,22 @@ impl UsersHandler {
                     })),
             )
             .layer(Extension(self.app_state.clone()))
-            .layer(Extension(users_service))
+            .layer(Extension(posts_service))
     }
-    async fn get_user(
-        Extension(users_service): Extension<UsersService>,
+
+    async fn get_post(
+        Extension(posts_service): Extension<PostsService>,
         Path(id): Path<String>,
     ) -> Result<Response, HttpError> {
         let uuid = Uuid::parse_str(&id)
             .map_err(|_| HttpError::bad_request("Invalid UUID format for `id` param"))?;
 
-        users_service.get_user(uuid).await
+        posts_service.get_post(uuid).await
     }
 
-    async fn get_users(
+    async fn get_posts(
+        Extension(posts_service): Extension<PostsService>,
         Query(query_params): Query<QueryRangeDto>,
-        Extension(users_service): Extension<UsersService>,
     ) -> Result<Response, HttpError> {
         query_params
             .validate()
@@ -106,41 +89,43 @@ impl UsersHandler {
         let page = query_params.page.unwrap_or(1);
         let limit = query_params.limit.unwrap_or(10);
 
-        users_service.get_users(page, limit).await
+        posts_service.get_posts(page, limit).await
     }
 
-    async fn update_user(
-        Extension(users_service): Extension<UsersService>,
-        Path(id): Path<String>,
-        Json(body): Json<UpdateUserDto>,
+    async fn create_post(
+        Extension(posts_service): Extension<PostsService>,
+        Extension(user): Extension<User>,
+        Json(post): Json<CreatePostDto>,
     ) -> Result<Response, HttpError> {
-        body.validate()
+        post.validate()
             .map_err(|e| HttpError::bad_request(e.to_string()))?;
 
-        let uuid = Uuid::parse_str(&id)
-            .map_err(|_| HttpError::bad_request("Invalid UUID format for `id` param"))?;
-
-        users_service.update_user(uuid, body).await
+        posts_service
+            .create_post(user.id, post.title, post.body)
+            .await
     }
 
-    async fn update_user_role(
-        Extension(users_service): Extension<UsersService>,
+    async fn update_post(
+        Extension(posts_service): Extension<PostsService>,
         Path(id): Path<String>,
-        Json(body): Json<UserRole>,
+        Json(post): Json<UpdatePostDto>,
     ) -> Result<Response, HttpError> {
         let uuid = Uuid::parse_str(&id)
             .map_err(|_| HttpError::bad_request("Invalid UUID format for `id` param"))?;
 
-        users_service.update_user_role(uuid, body).await
+        post.validate()
+            .map_err(|e| HttpError::bad_request(e.to_string()))?;
+
+        posts_service.update_post(uuid, post.title, post.body).await
     }
 
-    async fn delete_user(
-        Extension(users_service): Extension<UsersService>,
+    async fn delete_post(
+        Extension(posts_service): Extension<PostsService>,
         Path(id): Path<String>,
     ) -> Result<Response, HttpError> {
         let uuid = Uuid::parse_str(&id)
             .map_err(|_| HttpError::bad_request("Invalid UUID format for `id` param"))?;
 
-        users_service.delete_user(uuid).await
+        posts_service.delete_post(uuid).await
     }
 }

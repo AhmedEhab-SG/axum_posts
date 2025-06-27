@@ -3,7 +3,7 @@ use axum::{Extension, extract::Request, http::header, middleware::Next, response
 use uuid::Uuid;
 
 use crate::{
-    AppState, db::users::UserExt, error::HttpError, middlewares::Middleware,
+    AppState, db::users_db::UserExt, error::HttpError, middlewares::Middleware,
     utils::token::TokenClaims,
 };
 
