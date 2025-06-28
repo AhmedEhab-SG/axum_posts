@@ -14,7 +14,7 @@ pub enum Routes {
 impl Display for Routes {
     fn fmt(&self, f: &mut Formatter) -> Result {
         match self {
-            Self::Base => write!(f, "/api"),
+            Self::Base => write!(f, "/api/v1"),
             Self::Auth => write!(f, "/auth"),
             Self::Users => write!(f, "/users"),
             Self::Posts => write!(f, "/posts"),
