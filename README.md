@@ -94,16 +94,24 @@ curl -X DELETE http://localhost:7878/api/v1/posts/1 \
 
 ### POST /api/v1/auth/register
 
-    - email\*: string, must be a valid email address
-    - password\*: string, must be at least 8 characters long
-    - name\*: string, must be at least 5 characters long
+- request body:
+
+```
+  - email\*: string, must be a valid email address
+  - password\*: string, must be at least 8 characters long
+  - name\*: string, must be at least 5 characters long
+```
 
 > response status: 201 Created
 
 ### POST /api/v1/auth/login
 
-    - email\*: string, must be a valid email address
-    - password\*: string, must be at least 8 characters long
+- request body:
+
+```
+  - email\*: string, must be a valid email address
+  - password\*: string, must be at least 8 characters long
+```
 
 - response headers:
 
@@ -146,7 +154,7 @@ curl -X DELETE http://localhost:7878/api/v1/posts/1 \
 
 ```json
 {
-  "Authorization: "Bearer your_token",
+  "Authorization": "Bearer your_token"
 }
 ```
 
