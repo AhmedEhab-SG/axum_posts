@@ -8,7 +8,7 @@ use uuid::Uuid;
 
 use crate::{
     db::{DBClient, users_db::UserExt},
-    dtos::user_dto::{UpdateUserDto, UserResponseDto, UserRole, UsersResponseDtoList},
+    dtos::user_dto::{UpdateUserDto, UpdateUserRoleDto, UserResponseDto, UsersResponseDtoList},
     error::HttpError,
     utils::password::PasswordArgon,
 };
@@ -82,9 +82,13 @@ impl UsersService {
         Ok((StatusCode::NO_CONTENT).into_response())
     }
 
-    pub async fn update_user_role(&self, id: Uuid, role: UserRole) -> Result<Response, HttpError> {
+    pub async fn update_user_role(
+        &self,
+        id: Uuid,
+        data: UpdateUserRoleDto,
+    ) -> Result<Response, HttpError> {
         self.db_client
-            .update_user_role(id, role)
+            .update_user_role(id, data.role)
             .await
             .map_err(|_| HttpError::server_error("failed to update user role"))?;
 

@@ -32,10 +32,11 @@ impl PostsHandler {
 
     pub fn router(&self, posts_service: PostsService) -> Router {
         Router::new()
+            .route("/user/{id}", get(Self::get_posts_by_user_id))
             .route("/{id}", get(Self::get_post))
             .route("/", get(Self::get_posts))
             .route(
-                "/{id}",
+                "/",
                 post(Self::create_post).layer(middleware::from_fn(async |state, req, next| {
                     AuthGuard::new().validate_request(state, req, next).await
                 })),
@@ -76,6 +77,24 @@ impl PostsHandler {
             .map_err(|_| HttpError::bad_request("Invalid UUID format for `id` param"))?;
 
         posts_service.get_post(uuid).await
+    }
+
+    async fn get_posts_by_user_id(
+        Extension(posts_service): Extension<PostsService>,
+        Path(id): Path<String>,
+        Query(query_params): Query<QueryRangeDto>,
+    ) -> Result<Response, HttpError> {
+        query_params
+            .validate()
+            .map_err(|e| HttpError::bad_request(e.to_string()))?;
+
+        let uuid = Uuid::parse_str(&id)
+            .map_err(|_| HttpError::bad_request("Invalid UUID format for `id` param"))?;
+
+        let page = query_params.page.unwrap_or(1);
+        let limit = query_params.limit.unwrap_or(10);
+
+        posts_service.get_posts_by_user_id(uuid, page, limit).await
     }
 
     async fn get_posts(

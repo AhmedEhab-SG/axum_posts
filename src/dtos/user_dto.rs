@@ -78,3 +78,8 @@ pub struct UpdateUserDto {
     #[validate(length(min = 6, message = "Password must be at least 6 characters long"))]
     pub password: Option<String>,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UpdateUserRoleDto {
+    pub role: UserRole,
+}

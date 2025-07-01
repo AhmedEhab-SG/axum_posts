@@ -71,8 +71,6 @@ impl UserExt for DBClient {
     }
 
     async fn get_users(&self, page: usize, limit: usize) -> Result<Vec<User>, SqlxError> {
-        let offset = (page - 1) * limit;
-
         query_as::<_, User>(
             r#"
             SELECT * FROM users
@@ -81,7 +79,7 @@ impl UserExt for DBClient {
             "#,
         )
         .bind(limit as i64)
-        .bind(offset as i64)
+        .bind(((page - 1) * limit) as i64)
         .fetch_all(&self.pool)
         .await
     }
@@ -128,7 +126,7 @@ impl UserExt for DBClient {
             UPDATE users
             SET
                 email = COALESCE($1, email),
-                password = COALESCE($2, password)
+                password = COALESCE($2, password),
                 updated_at = NOW()
             WHERE id = $3
             RETURNING *

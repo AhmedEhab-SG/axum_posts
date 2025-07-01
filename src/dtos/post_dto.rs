@@ -16,8 +16,6 @@ pub struct Post {
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 pub struct CreatePostDto {
-    pub user_id: Uuid,
-
     #[validate(length(min = 5, message = "title must be at least 5 characters long"))]
     pub title: String,
 

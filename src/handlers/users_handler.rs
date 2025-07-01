@@ -3,7 +3,7 @@ use axum::{
     extract::{Path, Query},
     middleware,
     response::Response,
-    routing::{delete, get, patch},
+    routing::{delete, get, patch, put},
 };
 use uuid::Uuid;
 use validator::Validate;
@@ -12,7 +12,7 @@ use crate::{
     AppState,
     dtos::{
         QueryRangeDto,
-        user_dto::{UpdateUserDto, UserRole},
+        user_dto::{UpdateUserDto, UpdateUserRoleDto, UserRole},
     },
     error::HttpError,
     middlewares::{
@@ -60,7 +60,7 @@ impl UsersHandler {
             )
             .route(
                 "/role/{id}",
-                patch(Self::update_user_role)
+                put(Self::update_user_role)
                     .layer(middleware::from_fn(async |user, req, next| {
                         RolesGuard::new(vec![UserRole::Admin])
                             .validate_request(user, req, next)
@@ -126,7 +126,7 @@ impl UsersHandler {
     async fn update_user_role(
         Extension(users_service): Extension<UsersService>,
         Path(id): Path<String>,
-        Json(body): Json<UserRole>,
+        Json(body): Json<UpdateUserRoleDto>,
     ) -> Result<Response, HttpError> {
         let uuid = Uuid::parse_str(&id)
             .map_err(|_| HttpError::bad_request("Invalid UUID format for `id` param"))?;

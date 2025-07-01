@@ -26,11 +26,40 @@ impl PostsService {
             .db_client
             .get_post_by_id(id)
             .await
-            .map_err(|_| HttpError::server_error("failed to get user"))?
-            .ok_or_else(|| HttpError::not_found(format!("user with id: {id} not found")))?;
+            .map_err(|_| HttpError::server_error("failed to get post"))?
+            .ok_or_else(|| HttpError::not_found(format!("post with id: {id} not found")))?;
 
         let body = Json(json!({
            "post" :post,
+        }));
+
+        Ok((StatusCode::OK, body).into_response())
+    }
+
+    pub async fn get_posts_by_user_id(
+        &self,
+        user_id: Uuid,
+        page: usize,
+        limit: usize,
+    ) -> Result<Response, HttpError> {
+        let posts = self
+            .db_client
+            .get_posts_by_user_id(user_id, page, limit)
+            .await
+            .map_err(|_| HttpError::server_error("failed to get posts by user id"))?;
+
+        let post_count = self
+            .db_client
+            .get_posts_count()
+            .await
+            .map_err(|_| HttpError::server_error("failed to get post count"))?;
+
+        let body = Json(json!({
+            "posts": posts,
+            "form_user_id": user_id,
+            "total": post_count,
+            "limit": limit,
+            "page": page,
         }));
 
         Ok((StatusCode::OK, body).into_response())
@@ -52,6 +81,8 @@ impl PostsService {
         let body = Json(json!({
             "posts": posts,
             "total": post_count,
+            "limit": limit,
+            "page": page,
         }));
 
         Ok((StatusCode::OK, body).into_response())

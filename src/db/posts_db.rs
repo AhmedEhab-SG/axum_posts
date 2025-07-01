@@ -53,14 +53,14 @@ impl PostExt for DBClient {
     async fn get_posts(&self, page: usize, limit: usize) -> Result<Vec<Post>, SqlxError> {
         query_as::<_, Post>(
             r#"
-            SELECT * FROM posts 
-            ORDER BY created_at DESC 
+            SELECT * FROM posts
+            ORDER BY created_at DESC
             LIMIT $1 
             OFFSET $2
             "#,
         )
         .bind(limit as i64)
-        .bind((page * limit) as i64)
+        .bind(((page - 1) * limit) as i64)
         .fetch_all(&self.pool)
         .await
     }
@@ -82,7 +82,7 @@ impl PostExt for DBClient {
         )
         .bind(user_id)
         .bind(limit as i64)
-        .bind((page * limit) as i64)
+        .bind(((page - 1) * limit) as i64)
         .fetch_all(&self.pool)
         .await
     }
@@ -128,7 +128,7 @@ impl PostExt for DBClient {
             UPDATE posts
             SET 
                 title = COALESCE($2, title), 
-                body = COALESCE($3, body)
+                body = COALESCE($3, body),
                 updated_at = NOW()
             WHERE id = $1
             RETURNING *
